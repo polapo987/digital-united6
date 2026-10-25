@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>디지털 부대 (Digital Troop) - 익명 게시판</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: Orbitron & Noto Sans KR -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Orbitron:wght@600;800;900&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        cyber: {
+                            bg: '#080c14',
+                            card: '#0f172a',
+                            border: '#1e293b',
+                            green: '#00ff66',
+                            cyan: '#00f0ff',
+                            purple: '#a855f7',
+                            alert: '#ff0055'
+                        }
+                    },
+                    fontFamily: {
+                        orbitron: ['Orbitron', 'sans-serif'],
+                        sans: ['Noto Sans KR', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #050811;
+            color: #e2e8f0;
+            font-family: 'Noto Sans KR', sans-serif;
+            background-image: 
+                radial-gradient(circle at 50% 0%, rgba(0, 240, 255, 0.08) 0%, transparent 60%),
+                radial-gradient(circle at 80% 80%, rgba(0, 255, 102, 0.05) 0%, transparent 50%);
+            background-attachment: fixed;
+        }
+
+        /* Scanline Overlay */
+        .scanline {
+            background: linear-gradient(
+                to bottom,
+                rgba(255,255,255,0),
+                rgba(255,255,255,0) 50%,
+                rgba(0, 0, 0, 0.25) 50%,
+                rgba(0, 0, 0, 0.25)
+            );
+            background-size: 100% 4px;
+            pointer-events: none;
+        }
+
+        /* Glowing Effects */
+        .glow-green {
+            box-shadow: 0 0 15px rgba(0, 255, 102, 0.3);
+        }
+        .glow-cyan {
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.3);
+        }
+        .text-glow-green {
+            text-shadow: 0 0 8px rgba(0, 255, 102, 0.6);
+        }
+        .text-glow-cyan {
+            text-shadow: 0 0 8px rgba(0, 240, 255, 0.6);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #080c14;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1e293b;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #00f0ff;
+        }
+
+    </style>
+</head>
+<body class="min-h-screen relative flex flex-col justify-between overflow-x-hidden">
+    <div class="scanline fixed inset-0 z-50 pointer-events-none"></div>
+
+    <!-- NICKNAME MODAL (For first visit or editing) -->
+    <div id="nicknameModal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+        <div class="bg-cyber-card border border-cyber-cyan/40 rounded-2xl p-6 sm:p-8 max-w-md w-full shadow-2xl glow-cyan">
+            <div class="text-center mb-6">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-cyber-cyan/10 border border-cyber-cyan text-cyber-cyan mb-4">
+                    <i class="fa-solid font-orbitron fa-user-ninja text-2xl"></i>
+                </div>
+                <h2 class="text-2xl font-black font-orbitron text-cyber-cyan tracking-wider">CALLSIGN SETUP</h2>
+                <p class="text-slate-400 text-sm mt-1">디지털 부대에 접속하기 위한 닉네임을 설정하세요.</p>
+            </div>
+            <form id="nicknameForm" onsubmit="handleSaveNickname(event)">
+                <div class="mb-5">
+                    <label class="block text-xs font-semibold text-cyber-cyan uppercase tracking-wider mb-2">익명 닉네임</label>
+                    <input type="text" id="nicknameInput" maxlength="12" required
+                           placeholder="예: 사이버전사_07" 
+                           class="w-full bg-slate-900/80 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-cyber-cyan focus:ring-1 focus:ring-cyber-cyan">
+                </div>
+                <button type="submit" class="w-full py-3.5 bg-gradient-to-r from-cyber-cyan to-blue-600 font-bold text-slate-950 rounded-xl hover:opacity-90 transition-all shadow-lg glow-cyan">
+                    부대 접속 완료
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- PASSWORD PROMPT MODAL (For Category 1) -->
+    <div id="passwordModal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-cyber-card border border-cyber-green/50 rounded-2xl p-6 sm:p-8 max-w-md w-full shadow-2xl glow-green relative">
+            <button onclick="closePasswordModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-xl">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <div class="text-center mb-6">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-cyber-green/10 border border-cyber-green text-cyber-green mb-4">
+                    <i class="fa-solid fa-lock text-2xl"></i>
+                </div>
+                <h2 class="text-2xl font-black font-orbitron text-cyber-green tracking-wider">RESTRICTED ACCESS</h2>
+                <p class="text-slate-400 text-sm mt-1"><span class="text-cyber-green font-bold">[1번 디지털 부대]</span> 접속 인증 패스워드를 입력하십시오.</p>
+            </div>
+            <form id="passwordForm" onsubmit="handleVerifyPassword(event)">
+                <div class="mb-4">
+                    <input type="password" id="passwordInput" required placeholder="비밀번호 입력..." 
+                           class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-cyber-green focus:ring-1 focus:ring-cyber-green text-center text-lg tracking-widest">
+                    <p id="passwordError" class="text-cyber-alert text-xs mt-2 hidden text-center"><i class="fa-solid fa-triangle-exclamation mr-1"></i> 암호가 일치하지 않습니다.</p>
+                </div>
+                <button type="submit" class="w-full py-3.5 bg-gradient-to-r from-cyber-green to-emerald-600 font-bold text-slate-950 rounded-xl hover:opacity-90 transition-all shadow-lg glow-green">
+                    인증 확인
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- HEADER / NAVIGATION -->
+    <header class="border-b border-slate-800 bg-slate-950/80 backdrop-blur-md sticky top-0 z-40">
+        <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center gap-3 cursor-pointer" onclick="switchCategory('digital')">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center text-slate-950 font-black text-xl shadow-md">
+                    <i class="fa-solid fa-shield-halved"></i>
+                </div>
+                <div>
+                    <h1 class="font-orbitron font-extrabold text-lg sm:text-xl tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-cyber-green to-cyber-cyan">
+                        DIGITAL TROOP
+                    </h1>
+                    <p class="text-[10px] text-slate-400 font-mono tracking-widest uppercase">24h Auto-Deletion Cyber Board</p>
+                </div>
+            </div>
+
+            <!-- Profile / Change Nickname -->
+            <div class="flex items-center gap-3">
+                <button onclick="openNicknameModal()" class="flex items-center gap-2 bg-slate-900 border border-slate-700 hover:border-cyber-cyan px-3.5 py-1.5 rounded-xl transition text-xs sm:text-sm">
+                    <i class="fa-solid fa-user-secret text-cyber-cyan"></i>
+                    <span id="currentNicknameDisplay" class="font-medium text-slate-200">설정필요</span>
+                    <i class="fa-solid fa-pen text-[10px] text-slate-500 ml-1"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN CONTAINER -->
+    <main class="max-w-6xl mx-auto px-4 py-6 flex-grow w-full">
+        <!-- ANTI-BULLYING NOTICE -->
+        <section role="note" aria-label="학폭 예방 안내" class="mb-5 rounded-2xl border border-rose-500/40 bg-rose-950/30 px-4 py-3 text-sm text-rose-100 shadow-lg">
+            <div class="flex items-start gap-3">
+                <i class="fa-solid fa-shield-heart text-rose-400 text-lg mt-0.5"></i>
+                <div>
+                    <h2 class="font-bold text-rose-300">학폭 예방 · 클린 게시판 수칙</h2>
+                    <p class="mt-1 leading-relaxed">타인 비방, 실명 언급·초성 저격, 욕설을 금지합니다. 게시물과 댓글은 캡처되어 학교폭력 사안의 증거로 제출될 수 있으며, 관련 규정에 따라 조치될 수 있습니다. 서로를 존중해 주세요.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- CATEGORY SELECTOR & SYSTEM STATUS -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+            <!-- Tabs -->
+            <div class="flex p-1 bg-slate-900/90 border border-slate-800 rounded-2xl w-full md:w-auto">
+                <button id="tabCat1" onclick="switchCategory('digital')" 
+                        class="flex-1 md:flex-initial px-5 py-2.5 rounded-xl font-bold text-sm sm:text-base flex items-center justify-center gap-2 transition-all duration-200">
+                    <i class="fa-solid fa-lock text-xs"></i>
+                    1. 디지털 부대
+                    <span id="cat1LockBadge" class="text-[10px] bg-emerald-950 text-cyber-green border border-cyber-green/40 px-1.5 py-0.5 rounded">인증됨</span>
+                </button>
+                <button id="tabCat2" onclick="switchCategory('general')" 
+                        class="flex-1 md:flex-initial px-5 py-2.5 rounded-xl font-bold text-sm sm:text-base flex items-center justify-center gap-2 transition-all duration-200">
+                    <i class="fa-solid fa-comments text-xs"></i>
+                    2. 일반 게시판
+                </button>
+            </div>
+
+            <!-- Notice Banner -->
+            <div class="bg-slate-900/50 border border-slate-800/80 rounded-xl px-4 py-2 flex items-center gap-2 text-xs text-slate-400">
+                <i class="fa-solid fa-clock-rotate-left text-cyber-cyan animate-spin" style="animation-duration: 8s;"></i>
+                <span>모든 게시물과 댓글은 작성 후 <strong class="text-cyber-green">24시간 후 자동 파기</strong>됩니다.</span>
+            </div>
+        </div>
+
+        <!-- CONTENT GRID -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <!-- LEFT / TOP: CREATE POST FORM & INFO -->
+            <div class="lg:col-span-4 space-y-6">
+                <!-- Write Post Box -->
+                <div class="bg-cyber-card border border-slate-800 rounded-2xl p-5 shadow-xl relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-24 h-24 bg-cyber-green/5 rounded-full blur-2xl pointer-events-none"></div>
+                    <h3 class="text-base font-bold text-slate-100 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-pen-to-square text-cyber-green"></i>
+                        새 익명 작전 보고 (글쓰기)
+                    </h3>
+                    <form id="postForm" onsubmit="handleCreatePost(event)" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-400 mb-1">카테고리 지정</label>
+                            <select id="postCategorySelect" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-cyber-green">
+                                <option value="digital">1. 디지털 부대 (보안)</option>
+                                <option value="general">2. 일반 게시판 (공개)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <input type="text" id="postTitle" required placeholder="제목을 입력하세요" maxlength="50"
+                                   class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyber-green">
+                        </div>
+                        <div>
+                            <textarea id="postContent" required rows="4" placeholder="익명 메시지 작성을 시작하세요..." maxlength="1000"
+                                      class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyber-green resize-none"></textarea>
+                        </div>
+                        <button type="submit" id="submitPostBtn" class="w-full py-3 bg-gradient-to-r from-emerald-500 to-teal-600 font-bold text-slate-950 rounded-xl hover:opacity-90 transition shadow-md flex items-center justify-center gap-2 text-sm">
+                            <i class="fa-solid fa-paper-plane"></i>
+                            익명 글 전송
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Info Box -->
+                <div class="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-4 text-xs text-slate-400 space-y-2">
+                    <div class="font-bold text-slate-300 flex items-center gap-1.5">
+                        <i class="fa-solid fa-circle-info text-cyber-cyan"></i> 보안 규정 안내
+                    </div>
+                    <p>• 1번 디지털 부대는 비밀번호 인증 후에 진입할 수 있습니다.</p>
+                    <p>• 각 게시글 타이머가 <span class="text-cyber-alert">00:00:00</span>이 되는 즉시 시스템에서 영구 삭제됩니다.</p>
+                </div>
+            </div>
+
+            <!-- RIGHT / BOTTOM: POSTS FEED -->
+            <div class="lg:col-span-8">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-bold text-slate-200 flex items-center gap-2">
+                        <span id="currentCategoryTitle" class="text-cyber-green">디지털 부대</span> 게시글
+                        <span id="postCountBadge" class="bg-slate-800 text-slate-400 text-xs px-2.5 py-0.5 rounded-full font-mono">0</span>
+                    </h2>
+                    <button onclick="fetchPosts()" class="text-xs text-slate-400 hover:text-cyber-cyan flex items-center gap-1 transition">
+                        <i class="fa-solid fa-rotate-right"></i> 새로고침
+                    </button>
+                </div>
+
+                <!-- Posts List Container -->
+                <div id="postsContainer" class="space-y-4">
+                    <!-- Dynamic posts inserted here -->
+                    <div class="text-center py-12 bg-slate-900/30 rounded-2xl border border-dashed border-slate-800 text-slate-500">
+                        <i class="fa-solid fa-circle-notch animate-spin text-2xl text-cyber-cyan mb-2"></i>
+                        <p class="text-sm">데이터를 로딩 중입니다...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="border-t border-slate-900 bg-slate-950 py-6 text-center text-xs text-slate-600 mt-12">
+        <p class="font-mono">DIGITAL TROOP ANONYMOUS SYSTEM &copy; 24-HOUR AUTO EXPIRATION PROTOCOL</p>
+    </footer>
+
+    <!-- TOAST NOTIFICATION SYSTEM -->
+    <div id="toast" class="fixed bottom-6 right-6 bg-slate-900 border border-cyber-cyan text-white px-5 py-3 rounded-xl shadow-2xl z-50 transform translate-y-20 opacity-0 transition-all duration-300 flex items-center gap-3">
+        <i id="toastIcon" class="fa-solid fa-circle-check text-cyber-cyan text-lg"></i>
+        <span id="toastMessage" class="text-sm font-medium">메시지 내용을 입력하세요.</span>
+    </div>
+
+    <!-- FIREBASE MODULE & MAIN LOGIC -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, doc, addDoc, getDocs, getDoc, setDoc, deleteDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Global Variables / Config
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'digital-troop-board';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+            apiKey: "AIzaSyDummyKeyForDemoModeOnly12345",
+            authDomain: "demo-app.firebaseapp.com",
+            projectId: "demo-app",
+            storageBucket: "demo-app.appspot.com",
+            messagingSenderId: "123456789",
+            appId: "1:123456789:web:abcdef"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // App Local State
+        let currentUser = null;
+        let userNickname = localStorage.getItem('dt_nickname') || '';
+        let isCat1Unlocked = localStorage.getItem('dt_cat1_unlocked') === 'true';
+        let currentCategory = 'digital'; // 'digital' or 'general'
+        let postsData = [];
+        let timerInterval = null;
+
+        const SECRET_PASSWORD = 'goat11qwer';
+
+        // Firestore Paths (RULE 1 strictly observed)
+        const getPostsCollectionPath = () => collection(db, 'artifacts', appId, 'public', 'data', 'posts');
+        const getCommentsCollectionPath = (postId) => collection(db, 'artifacts', appId, 'public', 'data', `posts_${postId}_comments`);
+        const getReportsCollectionPath = (postId) => collection(db, 'artifacts', appId, 'public', 'data', `posts_${postId}_reports`);
+
+        // DOM Elements
+        const nicknameModal = document.getElementById('nicknameModal');
+        const passwordModal = document.getElementById('passwordModal');
+        const currentNicknameDisplay = document.getElementById('currentNicknameDisplay');
+        const cat1LockBadge = document.getElementById('cat1LockBadge');
+        const tabCat1 = document.getElementById('tabCat1');
+        const tabCat2 = document.getElementById('tabCat2');
+        const currentCategoryTitle = document.getElementById('currentCategoryTitle');
+        const postsContainer = document.getElementById('postsContainer');
+        const postCountBadge = document.getElementById('postCountBadge');
+        const postCategorySelect = document.getElementById('postCategorySelect');
+
+        // Init App Auth
+        async function initAuth() {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (err) {
+                console.warn("Auth initialization fallback:", err);
+            }
+        }
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUser = user;
+                fetchPosts(); // Start realtime listener
+            }
+        });
+
+        // Initialize Call
+        window.addEventListener('DOMContentLoaded', () => {
+            initAuth();
+            checkNicknameStatus();
+            updateCategoryUI();
+
+            // Start countdown timer ticker
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(updateAllCountdowns, 1000);
+        });
+
+        // Nickname logic
+        window.openNicknameModal = function() {
+            document.getElementById('nicknameInput').value = userNickname;
+            nicknameModal.classList.remove('hidden');
+        };
+
+        function checkNicknameStatus() {
+            if (!userNickname) {
+                nicknameModal.classList.remove('hidden');
+            } else {
+                nicknameModal.classList.add('hidden');
+                currentNicknameDisplay.textContent = userNickname;
+            }
+        }
+
+        window.handleSaveNickname = function(e) {
+            e.preventDefault();
+            const val = document.getElementById('nicknameInput').value.trim();
+            if (!val) return;
+            userNickname = val;
+            localStorage.setItem('dt_nickname', userNickname);
+            currentNicknameDisplay.textContent = userNickname;
+            nicknameModal.classList.add('hidden');
+            showToast("콜사인이 성공적으로 설정되었습니다.");
+        };
+
+        // Password Modal Logic for Category 1
+        window.closePasswordModal = function() {
+            passwordModal.classList.add('hidden');
+            document.getElementById('passwordError').classList.add('hidden');
+            document.getElementById('passwordInput').value = '';
+        };
+
+        window.handleVerifyPassword = function(e) {
+            e.preventDefault();
+            const pwd = document.getElementById('passwordInput').value.trim();
+            if (pwd === SECRET_PASSWORD) {
+                isCat1Unlocked = true;
+                localStorage.setItem('dt_cat1_unlocked', 'true');
+                closePasswordModal();
+                currentCategory = 'digital';
+                updateCategoryUI();
+                renderPosts();
+                showToast("1번 디지털 부대 비밀번호 승인 완료!", "green");
+            } else {
+                document.getElementById('passwordError').classList.remove('hidden');
+            }
+        };
+
+        // Category Switching
+        window.switchCategory = function(cat) {
+            if (cat === 'digital' && !isCat1Unlocked) {
+                passwordModal.classList.remove('hidden');
+                return;
+            }
+            currentCategory = cat;
+            postCategorySelect.value = cat;
+            updateCategoryUI();
+            renderPosts();
+        };
+
+        function updateCategoryUI() {
+            // Badges & Lock state
+            if (isCat1Unlocked) {
+                cat1LockBadge.textContent = "승인됨";
+                cat1LockBadge.className = "text-[10px] bg-emerald-950 text-cyber-green border border-cyber-green/40 px-1.5 py-0.5 rounded";
+            } else {
+                cat1LockBadge.textContent = "잠김";
+                cat1LockBadge.className = "text-[10px] bg-red-950 text-rose-400 border border-rose-800/40 px-1.5 py-0.5 rounded";
+            }
+
+            if (currentCategory === 'digital') {
+                tabCat1.className = "flex-1 md:flex-initial px-5 py-2.5 rounded-xl font-bold text-sm sm:text-base flex items-center justify-center gap-2 bg-cyber-green/10 text-cyber-green border border-cyber-green/40 shadow-lg glow-green";
+                tabCat2.className = "flex-1 md:flex-initial px-5 py-2.5 rounded-xl font-bold text-sm sm:text-base flex items-center justify-center gap-2 text-slate-400 hover:text-slate-200";
+                currentCategoryTitle.textContent = "1. 디지털 부대";
+                currentCategoryTitle.className = "text-cyber-green";
+            } else {
+                tabCat2.className = "flex-1 md:flex-initial px-5 py-2.5 rounded-xl font-bold text-sm sm:text-base flex items-center justify-center gap-2 bg-cyber-cyan/10 text-cyber-cyan border border-cyber-cyan/40 shadow-lg glow-cyan";
+                tabCat1.className = "flex-1 md:flex-initial px-5 py-2.5 rounded-xl font-bold text-sm sm:text-base flex items-center justify-center gap-2 text-slate-400 hover:text-slate-200";
+                currentCategoryTitle.textContent = "2. 일반 게시판";
+                currentCategoryTitle.className = "text-cyber-cyan";
+            }
+        }
+
+        // Create Post
+        window.handleCreatePost = async function(e) {
+            e.preventDefault();
+            if (!userNickname) {
+                openNicknameModal();
+                return;
+            }
+
+            const targetCat = postCategorySelect.value;
+            if (targetCat === 'digital' && !isCat1Unlocked) {
+                passwordModal.classList.remove('hidden');
+                return;
+            }
+
+            const titleInput = document.getElementById('postTitle');
+            const contentInput = document.getElementById('postContent');
+            const submitBtn = document.getElementById('submitPostBtn');
+
+            const title = titleInput.value.trim();
+            const content = contentInput.value.trim();
+
+            if (!title || !content) return;
+
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> 전송 중...`;
+
+            try {
+                if (!currentUser) await initAuth();
+
+                const newPost = {
+                    title: title,
+                    content: content,
+                    author: userNickname,
+                    category: targetCat,
+                    createdAt: Date.now(), // Store unix timestamp for simple client/server calc
+                    timestamp: serverTimestamp()
+                };
+
+                await addDoc(getPostsCollectionPath(), newPost);
+
+                titleInput.value = '';
+                contentInput.value = '';
+                showToast("게시물이 성공적으로 수록되었습니다.");
+                
+                // If created in different category, switch tab to view it
+                if (currentCategory !== targetCat) {
+                    currentCategory = targetCat;
+                    updateCategoryUI();
+                }
+            } catch (error) {
+                console.error("Post creation error:", error);
+                showToast("글 작성 실패: 네트워크 상태를 확인하세요.", "alert");
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> 익명 글 전송`;
+            }
+        };
+
+        // Fetch Posts Realtime
+        function fetchPosts() {
+            if (!currentUser) return;
+
+            const q = getPostsCollectionPath();
+            onSnapshot(q, (snapshot) => {
+                const now = Date.now();
+                const EXPIRE_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+                postsData = [];
+                snapshot.forEach((docSnap) => {
+                    const data = docSnap.data();
+                    const createdTime = data.createdAt || (data.timestamp ? data.timestamp.toMillis() : now);
+                    const age = now - createdTime;
+
+                    // Automatically delete expired posts from server if detected
+                    if (age >= EXPIRE_MS) {
+                        deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'posts', docSnap.id)).catch(()=>{});
+                    } else {
+                        postsData.push({
+                            id: docSnap.id,
+                            ...data,
+                            createdAt: createdTime
+                        });
+                    }
+                });
+
+                // Sort posts newest first (RULE 2: JS sorting)
+                postsData.sort((a, b) => b.createdAt - a.createdAt);
+                renderPosts();
+            }, (error) => {
+                console.error("Realtime fetch error:", error);
+                postsContainer.innerHTML = `<div class="p-6 text-center text-slate-500 bg-slate-900/40 rounded-xl">데이터 수신 중 오류가 발생했습니다.</div>`;
+            });
+        }
+
+        // Render Posts UI
+        function renderPosts() {
+            const filtered = postsData.filter(p => p.category === currentCategory);
+            postCountBadge.textContent = filtered.length;
+
+            if (filtered.length === 0) {
+                postsContainer.innerHTML = `
+                    <div class="text-center py-16 bg-slate-900/30 rounded-2xl border border-slate-800 text-slate-500">
+                        <i class="fa-solid fa-folder-open text-4xl text-slate-700 mb-3"></i>
+                        <p class="text-base font-medium text-slate-400">게시글이 존재하지 않습니다.</p>
+                        <p class="text-xs text-slate-600 mt-1">첫 번째 작전 보고글을 남겨보세요!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            postsContainer.innerHTML = filtered.map(post => {
+                const remainingSec = getRemainingSeconds(post.createdAt);
+                return `
+                    <div id="post-card-${post.id}" class="bg-cyber-card border border-slate-800 hover:border-slate-700 rounded-2xl p-5 shadow-lg transition-all duration-200">
+                        <!-- Post Header -->
+                        <div class="flex items-start justify-between gap-3 mb-3">
+                            <div class="flex-1">
+                                <span class="inline-block text-[10px] font-mono font-bold px-2 py-0.5 rounded mb-2 ${post.category === 'digital' ? 'bg-emerald-950 text-cyber-green border border-cyber-green/30' : 'bg-cyan-950 text-cyber-cyan border border-cyber-cyan/30'}">
+                                    ${post.category === 'digital' ? '1. 디지털 부대' : '2. 일반 게시판'}
+                                </span>
+                                <h3 class="text-base sm:text-lg font-bold text-slate-100 leading-snug break-all">${escapeHtml(post.title)}</h3>
+                            </div>
+                            <!-- Countdown Badge -->
+                            <div class="text-right shrink-0">
+                                <div class="inline-flex items-center gap-1.5 bg-slate-900 border border-slate-700/80 px-2.5 py-1 rounded-xl text-xs font-mono text-cyber-green shadow-inner">
+                                    <i class="fa-solid fa-stopwatch text-[10px] animate-pulse"></i>
+                                    <span class="countdown-timer font-bold" data-created="${post.createdAt}">
+                                        ${formatTime(remainingSec)}
+                                    </span>
+                                </div>
+                                <div class="text-[10px] text-slate-500 mt-1 text-right">후 자동 삭제</div>
+                            </div>
+                        </div>
+
+                        <!-- Post Body -->
+                        <p class="text-slate-300 text-sm whitespace-pre-wrap leading-relaxed mb-4 break-all bg-slate-900/40 p-3 rounded-xl border border-slate-800/60">${escapeHtml(post.content)}</p>
+
+                        <!-- Post Footer -->
+                        <div class="flex items-center justify-between text-xs text-slate-400 pt-3 border-t border-slate-800/80">
+                            <div class="flex items-center gap-2">
+                                <span class="w-6 h-6 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-[10px] text-cyber-cyan">
+                                    <i class="fa-solid fa-user-secret"></i>
+                                </span>
+                                <span class="font-medium text-slate-300">${escapeHtml(post.author)}</span>
+                                <span class="text-slate-600">•</span>
+                                <span class="text-slate-500 text-[11px]">${formatDate(post.createdAt)}</span>
+                            </div>
+                            
+                            <div class="flex items-center gap-1.5">
+                                <button onclick="reportPost('${post.id}')" class="flex items-center gap-1 text-rose-400 hover:text-rose-300 font-semibold px-2.5 py-1 bg-rose-500/5 hover:bg-rose-500/10 rounded-lg transition" aria-label="게시글 신고">
+                                    <i class="fa-solid fa-triangle-exclamation"></i><span>신고</span>
+                                </button>
+                                <button onclick="adminDeletePost('${post.id}')" class="flex items-center gap-1 text-amber-400 hover:text-amber-300 font-semibold px-2.5 py-1 bg-amber-500/5 hover:bg-amber-500/10 rounded-lg transition" aria-label="관리자 삭제">
+                                    <i class="fa-solid fa-crown"></i><span>관리자</span>
+                                </button>
+                                <button onclick="toggleComments('${post.id}')" class="flex items-center gap-1.5 text-cyber-cyan hover:text-cyan-300 font-semibold px-3 py-1 bg-cyber-cyan/5 hover:bg-cyber-cyan/10 rounded-lg transition">
+                                <i class="fa-solid fa-comment-dots"></i>
+                                <span>댓글</span>
+                                <span id="comment-count-${post.id}" class="text-[11px] font-mono font-bold bg-slate-800 px-1.5 py-0.2 rounded">0</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Comments Section (Hidden by default) -->
+                        <div id="comments-section-${post.id}" class="hidden mt-4 pt-4 border-t border-slate-800 space-y-3">
+                            <div class="font-bold text-xs text-slate-400 flex items-center gap-1.5 mb-2">
+                                <i class="fa-solid fa-comments text-cyber-cyan"></i> 실시간 댓글 대화
+                            </div>
+
+                            <!-- Comment Input Form -->
+                            <form onsubmit="handleAddComment(event, '${post.id}')" class="flex gap-2 mb-3">
+                                <input type="text" id="comment-input-${post.id}" required placeholder="댓글을 작성하세요..." maxlength="200"
+                                       class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyber-cyan">
+                                <button type="submit" class="px-3.5 py-2 bg-cyber-cyan hover:bg-cyan-400 text-slate-950 font-bold rounded-xl text-xs transition">
+                                    등록
+                                </button>
+                            </form>
+
+                            <!-- Comments List -->
+                            <div id="comments-list-${post.id}" class="space-y-2 max-h-60 overflow-y-auto pr-1">
+                                <div class="text-center py-3 text-xs text-slate-600">댓글을 불러오는 중...</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            // Load comment listeners for rendered posts
+            filtered.forEach(p => listenComments(p.id));
+        }
+
+        // Report once per signed-in anonymous account; three distinct reports remove the post.
+        window.reportPost = async function(postId) {
+            if (!currentUser) { showToast("신고하려면 연결이 필요합니다. 잠시 후 다시 시도해 주세요.", "alert"); return; }
+            const reasons = ["타인 비방·괴롭힘", "실명·초성 저격", "욕설·혐오 표현", "기타 부적절한 내용"];
+            const choice = prompt("신고 사유 번호를 입력하세요.\n1. 타인 비방·괴롭힘\n2. 실명·초성 저격\n3. 욕설·혐오 표현\n4. 기타 부적절한 내용");
+            if (choice === null) return;
+            const index = Number(choice.trim()) - 1;
+            if (!Number.isInteger(index) || index < 0 || index >= reasons.length) { showToast("신고 사유 번호를 확인해 주세요.", "alert"); return; }
+            try {
+                const postRef = doc(db, 'artifacts', appId, 'public', 'data', 'posts', postId);
+                if (!(await getDoc(postRef)).exists()) { showToast("이미 삭제된 게시글입니다.", "alert"); return; }
+                const reportRef = doc(getReportsCollectionPath(postId), currentUser.uid);
+                if ((await getDoc(reportRef)).exists()) { showToast("이 게시글은 이미 신고하셨습니다.", "alert"); return; }
+                await setDoc(reportRef, { reason: reasons[index], createdAt: Date.now() });
+                const reports = await getDocs(getReportsCollectionPath(postId));
+                if (reports.size >= 3) {
+                    await deleteDoc(postRef);
+                    showToast("신고가 3회 누적되어 게시글이 블라인드 처리되었습니다.", "alert");
+                } else showToast("신고가 접수되었습니다. (" + reports.size + "/3)");
+            } catch (error) {
+                console.error("Post report error:", error);
+                showToast("신고 처리 실패: Firestore 권한 설정을 확인하세요.", "alert");
+            }
+        };
+
+        // Client-side password gate for manual moderation.
+        window.adminDeletePost = async function(postId) {
+            const password = prompt("관리자 마스터 비밀번호를 입력하세요.");
+            if (password === null) return;
+            if (password !== SECRET_PASSWORD) { showToast("관리자 비밀번호가 일치하지 않습니다.", "alert"); return; }
+            if (!confirm("이 게시글을 삭제할까요? 삭제 후 복구할 수 없습니다.")) return;
+            try {
+                await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'posts', postId));
+                showToast("게시글을 삭제했습니다.", "green");
+            } catch (error) {
+                console.error("Admin post deletion error:", error);
+                showToast("삭제 실패: Firestore 권한 설정을 확인하세요.", "alert");
+            }
+        };
+
+        // Toggle Comments Drawer
+        window.toggleComments = function(postId) {
+            const section = document.getElementById(`comments-section-${postId}`);
+            if (section) {
+                section.classList.toggle('hidden');
+            }
+        };
+
+        // Add Comment Function
+        window.handleAddComment = async function(e, postId) {
+            e.preventDefault();
+            if (!userNickname) {
+                openNicknameModal();
+                return;
+            }
+
+            const input = document.getElementById(`comment-input-${postId}`);
+            const text = input.value.trim();
+            if (!text) return;
+
+            try {
+                await addDoc(getCommentsCollectionPath(postId), {
+                    author: userNickname,
+                    text: text,
+                    createdAt: Date.now()
+                });
+                input.value = '';
+            } catch (error) {
+                console.error("Comment add error:", error);
+                showToast("댓글 등록 실패", "alert");
+            }
+        };
+
+        // Realtime Comment Listener
+        const activeCommentListeners = {};
+        function listenComments(postId) {
+            if (activeCommentListeners[postId]) return; // Already listening
+
+            const commentsCol = getCommentsCollectionPath(postId);
+            activeCommentListeners[postId] = onSnapshot(commentsCol, (snapshot) => {
+                const comments = [];
+                snapshot.forEach(d => {
+                    comments.push({ id: d.id, ...d.data() });
+                });
+
+                // JS Sort comments oldest to newest
+                comments.sort((a, b) => a.createdAt - b.createdAt);
+
+                const countElem = document.getElementById(`comment-count-${postId}`);
+                if (countElem) countElem.textContent = comments.length;
+
+                const listElem = document.getElementById(`comments-list-${postId}`);
+                if (listElem) {
+                    if (comments.length === 0) {
+                        listElem.innerHTML = `<div class="text-center py-2 text-[11px] text-slate-600">등록된 댓글이 없습니다.</div>`;
+                    } else {
+                        listElem.innerHTML = comments.map(c => `
+                            <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-2.5 text-xs">
+                                <div class="flex items-center justify-between text-[11px] text-slate-400 mb-1">
+                                    <span class="font-bold text-cyber-cyan">${escapeHtml(c.author)}</span>
+                                    <span class="text-slate-600">${formatDate(c.createdAt)}</span>
+                                </div>
+                                <p class="text-slate-200 break-all">${escapeHtml(c.text)}</p>
+                            </div>
+                        `).join('');
+                    }
+                }
+            }, (err) => console.warn("Comments listener err:", err));
+        }
+
+        // Countdown Timer Utilities
+        function getRemainingSeconds(createdAt) {
+            const EXPIRE_MS = 24 * 60 * 60 * 1000; // 24 Hours
+            const diff = (createdAt + EXPIRE_MS) - Date.now();
+            return Math.max(0, Math.floor(diff / 1000));
+        }
+
+        function formatTime(totalSec) {
+            if (totalSec <= 0) return "00:00:00";
+            const h = Math.floor(totalSec / 3600);
+            const m = Math.floor((totalSec % 3600) / 60);
+            const s = totalSec % 60;
+            return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+        }
+
+        function updateAllCountdowns() {
+            const timerElems = document.querySelectorAll('.countdown-timer');
+            timerElems.forEach(elem => {
+                const created = parseInt(elem.getAttribute('data-created'), 10);
+                if (created) {
+                    const remaining = getRemainingSeconds(created);
+                    elem.textContent = formatTime(remaining);
+                    
+                    // Warning visual state when under 1 hour
+                    if (remaining < 3600) {
+                        elem.classList.add('text-cyber-alert');
+                        elem.classList.remove('text-cyber-green');
+                    }
+                }
+            });
+        }
+
+        // Helper Utilities
+        function formatDate(ts) {
+            if (!ts) return '';
+            const d = new Date(ts);
+            return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        function showToast(msg, type = "info") {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toastMessage');
+            const toastIcon = document.getElementById('toastIcon');
+
+            toastMsg.textContent = msg;
+            if (type === "alert") {
+                toastIcon.className = "fa-solid fa-circle-exclamation text-cyber-alert text-lg";
+                toast.style.borderColor = "#ff0055";
+            } else if (type === "green") {
+                toastIcon.className = "fa-solid fa-shield-check text-cyber-green text-lg";
+                toast.style.borderColor = "#00ff66";
+            } else {
+                toastIcon.className = "fa-solid fa-circle-check text-cyber-cyan text-lg";
+                toast.style.borderColor = "#00f0ff";
+            }
+
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
