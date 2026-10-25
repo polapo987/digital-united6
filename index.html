@@ -88,10 +88,44 @@
             background: #00f0ff;
         }
 
+        /* Floating Praying Mantis Animation */
+        @keyframes floatBug {
+            0% { transform: translate(0px, 0px) rotate(0deg); }
+            20% { transform: translate(120px, -80px) rotate(15deg); }
+            40% { transform: translate(250px, 60px) rotate(-10deg); }
+            60% { transform: translate(100px, 150px) rotate(20deg); }
+            80% { transform: translate(-80px, 50px) rotate(-15deg); }
+            100% { transform: translate(0px, 0px) rotate(0deg); }
+        }
+
+        .mantis-bug {
+            position: fixed;
+            z-index: 9999;
+            cursor: pointer;
+            animation: floatBug 18s ease-in-out infinite;
+            filter: drop-shadow(0 0 8px rgba(0, 255, 102, 0.8));
+            transition: transform 0.2s;
+        }
+        .mantis-bug:hover {
+            scale: 1.25;
+        }
     </style>
 </head>
 <body class="min-h-screen relative flex flex-col justify-between overflow-x-hidden">
     <div class="scanline fixed inset-0 z-50 pointer-events-none"></div>
+
+    <!-- FLOATING PRAYING MANTIS EASTER EGG -->
+    <a href="https://youtu.be/DUJXj95Wdas?si=lzgWi3rRBjFzdaZC" target="_blank" rel="noopener noreferrer" 
+       class="mantis-bug top-1/4 left-10 p-2 rounded-full hover:bg-emerald-500/20 group" title="기밀 프로토콜 접촉 (사마귀)">
+        <svg class="w-12 h-12 text-emerald-400 group-hover:text-emerald-300 animate-pulse" viewBox="0 0 64 64" fill="currentColor">
+            <!-- Praying Mantis Custom SVG Graphic -->
+            <path d="M32 8 C 30 2, 22 2, 20 6 C 18 10, 24 14, 28 14 C 26 18, 20 22, 14 18 C 10 14, 4 20, 8 24 C 12 28, 20 24, 26 22 C 24 28, 18 36, 12 42 C 8 46, 14 52, 18 48 C 22 44, 28 34, 30 28 C 32 32, 36 34, 40 40 C 44 46, 50 50, 52 46 C 54 42, 48 38, 44 34 C 38 28, 35 24, 34 18 C 40 16, 48 18, 54 14 C 58 10, 52 4, 46 8 C 42 12, 36 14, 32 8 Z"/>
+            <circle cx="22" cy="6" r="2" fill="#00f0ff"/>
+            <circle cx="28" cy="8" r="2" fill="#00f0ff"/>
+            <path d="M12 28 L 2 38 M 52 28 L 62 38" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <path d="M16 40 L 8 56 M 48 40 L 56 56" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+    </a>
 
     <!-- NICKNAME MODAL (For first visit or editing) -->
     <div id="nicknameModal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
@@ -171,17 +205,6 @@
 
     <!-- MAIN CONTAINER -->
     <main class="max-w-6xl mx-auto px-4 py-6 flex-grow w-full">
-        <!-- ANTI-BULLYING NOTICE -->
-        <section role="note" aria-label="학폭 예방 안내" class="mb-5 rounded-2xl border border-rose-500/40 bg-rose-950/30 px-4 py-3 text-sm text-rose-100 shadow-lg">
-            <div class="flex items-start gap-3">
-                <i class="fa-solid fa-shield-heart text-rose-400 text-lg mt-0.5"></i>
-                <div>
-                    <h2 class="font-bold text-rose-300">학폭 예방 · 클린 게시판 수칙</h2>
-                    <p class="mt-1 leading-relaxed">타인 비방, 실명 언급·초성 저격, 욕설을 금지합니다. 게시물과 댓글은 캡처되어 학교폭력 사안의 증거로 제출될 수 있으며, 관련 규정에 따라 조치될 수 있습니다. 서로를 존중해 주세요.</p>
-                </div>
-            </div>
-        </section>
-
         <!-- CATEGORY SELECTOR & SYSTEM STATUS -->
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
             <!-- Tabs -->
@@ -245,8 +268,9 @@
                     <div class="font-bold text-slate-300 flex items-center gap-1.5">
                         <i class="fa-solid fa-circle-info text-cyber-cyan"></i> 보안 규정 안내
                     </div>
-                    <p>• 1번 디지털 부대는 비밀번호 인증 후에 진입할 수 있습니다.</p>
+                    <p>• 1번 디지털 부대는 암호인증(<code class="text-cyber-green font-mono">goat11qwer</code>) 후에만 진입할 수 있습니다.</p>
                     <p>• 각 게시글 타이머가 <span class="text-cyber-alert">00:00:00</span>이 되는 즉시 시스템에서 영구 삭제됩니다.</p>
+                    <p>• 화면을 떠돌아다니는 사마귀 개체를 터치하면 외장 링크로 이동합니다.</p>
                 </div>
             </div>
 
@@ -289,7 +313,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, doc, addDoc, getDocs, getDoc, setDoc, deleteDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, doc, addDoc, getDocs, deleteDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // Global Variables / Config
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'digital-troop-board';
@@ -320,7 +344,6 @@
         // Firestore Paths (RULE 1 strictly observed)
         const getPostsCollectionPath = () => collection(db, 'artifacts', appId, 'public', 'data', 'posts');
         const getCommentsCollectionPath = (postId) => collection(db, 'artifacts', appId, 'public', 'data', `posts_${postId}_comments`);
-        const getReportsCollectionPath = (postId) => collection(db, 'artifacts', appId, 'public', 'data', `posts_${postId}_reports`);
 
         // DOM Elements
         const nicknameModal = document.getElementById('nicknameModal');
@@ -597,19 +620,11 @@
                                 <span class="text-slate-500 text-[11px]">${formatDate(post.createdAt)}</span>
                             </div>
                             
-                            <div class="flex items-center gap-1.5">
-                                <button onclick="reportPost('${post.id}')" class="flex items-center gap-1 text-rose-400 hover:text-rose-300 font-semibold px-2.5 py-1 bg-rose-500/5 hover:bg-rose-500/10 rounded-lg transition" aria-label="게시글 신고">
-                                    <i class="fa-solid fa-triangle-exclamation"></i><span>신고</span>
-                                </button>
-                                <button onclick="adminDeletePost('${post.id}')" class="flex items-center gap-1 text-amber-400 hover:text-amber-300 font-semibold px-2.5 py-1 bg-amber-500/5 hover:bg-amber-500/10 rounded-lg transition" aria-label="관리자 삭제">
-                                    <i class="fa-solid fa-crown"></i><span>관리자</span>
-                                </button>
-                                <button onclick="toggleComments('${post.id}')" class="flex items-center gap-1.5 text-cyber-cyan hover:text-cyan-300 font-semibold px-3 py-1 bg-cyber-cyan/5 hover:bg-cyber-cyan/10 rounded-lg transition">
+                            <button onclick="toggleComments('${post.id}')" class="flex items-center gap-1.5 text-cyber-cyan hover:text-cyan-300 font-semibold px-3 py-1 bg-cyber-cyan/5 hover:bg-cyber-cyan/10 rounded-lg transition">
                                 <i class="fa-solid fa-comment-dots"></i>
                                 <span>댓글</span>
                                 <span id="comment-count-${post.id}" class="text-[11px] font-mono font-bold bg-slate-800 px-1.5 py-0.2 rounded">0</span>
-                                </button>
-                            </div>
+                            </button>
                         </div>
 
                         <!-- Comments Section (Hidden by default) -->
@@ -639,46 +654,6 @@
             // Load comment listeners for rendered posts
             filtered.forEach(p => listenComments(p.id));
         }
-
-        // Report once per signed-in anonymous account; three distinct reports remove the post.
-        window.reportPost = async function(postId) {
-            if (!currentUser) { showToast("신고하려면 연결이 필요합니다. 잠시 후 다시 시도해 주세요.", "alert"); return; }
-            const reasons = ["타인 비방·괴롭힘", "실명·초성 저격", "욕설·혐오 표현", "기타 부적절한 내용"];
-            const choice = prompt("신고 사유 번호를 입력하세요.\n1. 타인 비방·괴롭힘\n2. 실명·초성 저격\n3. 욕설·혐오 표현\n4. 기타 부적절한 내용");
-            if (choice === null) return;
-            const index = Number(choice.trim()) - 1;
-            if (!Number.isInteger(index) || index < 0 || index >= reasons.length) { showToast("신고 사유 번호를 확인해 주세요.", "alert"); return; }
-            try {
-                const postRef = doc(db, 'artifacts', appId, 'public', 'data', 'posts', postId);
-                if (!(await getDoc(postRef)).exists()) { showToast("이미 삭제된 게시글입니다.", "alert"); return; }
-                const reportRef = doc(getReportsCollectionPath(postId), currentUser.uid);
-                if ((await getDoc(reportRef)).exists()) { showToast("이 게시글은 이미 신고하셨습니다.", "alert"); return; }
-                await setDoc(reportRef, { reason: reasons[index], createdAt: Date.now() });
-                const reports = await getDocs(getReportsCollectionPath(postId));
-                if (reports.size >= 3) {
-                    await deleteDoc(postRef);
-                    showToast("신고가 3회 누적되어 게시글이 블라인드 처리되었습니다.", "alert");
-                } else showToast("신고가 접수되었습니다. (" + reports.size + "/3)");
-            } catch (error) {
-                console.error("Post report error:", error);
-                showToast("신고 처리 실패: Firestore 권한 설정을 확인하세요.", "alert");
-            }
-        };
-
-        // Client-side password gate for manual moderation.
-        window.adminDeletePost = async function(postId) {
-            const password = prompt("관리자 마스터 비밀번호를 입력하세요.");
-            if (password === null) return;
-            if (password !== SECRET_PASSWORD) { showToast("관리자 비밀번호가 일치하지 않습니다.", "alert"); return; }
-            if (!confirm("이 게시글을 삭제할까요? 삭제 후 복구할 수 없습니다.")) return;
-            try {
-                await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'posts', postId));
-                showToast("게시글을 삭제했습니다.", "green");
-            } catch (error) {
-                console.error("Admin post deletion error:", error);
-                showToast("삭제 실패: Firestore 권한 설정을 확인하세요.", "alert");
-            }
-        };
 
         // Toggle Comments Drawer
         window.toggleComments = function(postId) {
@@ -794,6 +769,7 @@
             return str
                 .replace(/&/g, "&amp;")
                 .replace(/</g, "&lt;")
+                .replace(/>/g, "&raw_gt;")
                 .replace(/>/g, "&gt;")
                 .replace(/"/g, "&quot;")
                 .replace(/'/g, "&#039;");
